@@ -5,7 +5,9 @@
 - Python 3.11
 - Node.js 24+
 - pnpm 10+
-- Ollama running locally with Gemma available
+- Optional: Ollama running locally with Gemma available
+
+The system can still run without Ollama because it falls back to a deterministic mock provider when model generation fails.
 
 ## Run API
 
@@ -29,3 +31,22 @@ pnpm --filter web-dashboard dev
 ```
 
 Open http://localhost:5173.
+
+## Run MCP Servers Directly
+
+```bash
+python mcp_servers/mining_news/server.py
+python mcp_servers/mineral_pdf/server.py
+python mcp_servers/lme_price/server.py
+```
+
+For Claude Desktop or Cursor, copy the server entries from `mcp-config.json`.
+
+## Verify
+
+```bash
+python -m pytest
+pnpm --recursive test
+pnpm --recursive build
+docker compose config
+```

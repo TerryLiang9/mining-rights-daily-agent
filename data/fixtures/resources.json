@@ -1,0 +1,29 @@
+{
+  "project_name": "Pilbara lithium sample",
+  "report_title": "Sample NI 43-101 Technical Report",
+  "source_url": "data/fixtures/resources.json",
+  "resources": [
+    {
+      "category": "Indicated",
+      "ore_tonnage": 120.5,
+      "ore_tonnage_unit": "Mt",
+      "grade": 1.25,
+      "grade_unit": "% Li2O",
+      "contained_metal": 1.5,
+      "contained_metal_unit": "Mt LCE",
+      "page": 42,
+      "confidence": 0.78
+    },
+    {
+      "category": "Inferred",
+      "ore_tonnage": 80.2,
+      "ore_tonnage_unit": "Mt",
+      "grade": 1.05,
+      "grade_unit": "% Li2O",
+      "contained_metal": 0.9,
+      "contained_metal_unit": "Mt LCE",
+      "page": 43,
+      "confidence": 0.72
+    }
+  ]
+}

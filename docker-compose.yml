@@ -1,10 +1,13 @@
+name: mining-rights-daily-agent
+
 services:
   agent-api:
     build:
       context: .
       dockerfile: apps/agent-api/Dockerfile
     env_file:
-      - .env
+      - path: .env
+        required: false
     ports:
       - "8000:8000"
 

@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Pilbara lithium developers monitor export and processing policy signals",
+    "url": "https://example.com/pilbara-lithium-policy",
+    "source": "fixture-mining-news",
+    "published_at": "2026-06-12",
+    "summary": "Sample mining news item about Pilbara lithium policy and project execution.",
+    "score": 0.91
+  },
+  {
+    "title": "Australian critical minerals projects focus on downstream partnerships",
+    "url": "https://example.com/australia-critical-minerals",
+    "source": "fixture-mining-news",
+    "published_at": "2026-06-11",
+    "summary": "Sample item covering critical minerals partnerships and financing signals.",
+    "score": 0.84
+  }
+]

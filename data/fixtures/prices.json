@@ -1,0 +1,21 @@
+{
+  "lithium": {
+    "currency": "USD",
+    "unit": "t",
+    "points": [
+      { "date": "2026-05-15", "price": 12100 },
+      { "date": "2026-05-22", "price": 12340 },
+      { "date": "2026-05-29", "price": 12620 },
+      { "date": "2026-06-05", "price": 12740 },
+      { "date": "2026-06-13", "price": 12850 }
+    ]
+  },
+  "copper": {
+    "currency": "USD",
+    "unit": "t",
+    "points": [
+      { "date": "2026-05-15", "price": 9450 },
+      { "date": "2026-06-13", "price": 9580 }
+    ]
+  }
+}

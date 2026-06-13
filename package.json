@@ -7,7 +7,8 @@
     "cli": "pnpm --filter agent-cli start --",
     "dev:web": "pnpm --filter web-dashboard dev",
     "test:python": "python -m pytest",
-    "verify": "python -m pytest && pnpm --recursive build && docker compose config"
+    "test:ts": "pnpm --recursive test",
+    "verify": "python -m pytest && pnpm --recursive test && pnpm --recursive build && docker compose config"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
