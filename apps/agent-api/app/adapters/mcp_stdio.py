@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -50,4 +51,5 @@ class MCPStdioToolAdapter:
             command=server["command"],
             args=server.get("args", []),
             cwd=ROOT_DIR,
+            env=os.environ.copy(),
         )

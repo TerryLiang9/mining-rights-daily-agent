@@ -55,6 +55,16 @@ def search(query: str, days: int = 7, limit: int = 5) -> NewsSearchResult:
             live_result.warnings = [*warnings, *live_result.warnings]
             return live_result
         warnings.extend(live_result.warnings)
+    elif not settings.use_fixtures_on_failure:
+        return NewsSearchResult(
+            items=[],
+            fallback_used=False,
+            retrieved_at=retrieved_at(),
+            warnings=[
+                *warnings,
+                "No mining news source configured; set MINING_NEWS_RSS_FEEDS.",
+            ],
+        )
 
     return FixtureNewsProvider().search(normalized_query, days, limit, warnings)
 

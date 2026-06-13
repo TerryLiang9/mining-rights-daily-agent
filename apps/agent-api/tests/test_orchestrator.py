@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 
 from app.main import app
 from app.orchestrator import generate_report
@@ -26,6 +27,15 @@ class RecordingToolAdapter:
         if (server_name, tool_name) == ("lme-price-mcp", "get_trend"):
             return get_trend(**arguments).model_dump()
         raise AssertionError(f"Unexpected tool call: {server_name}.{tool_name}")
+
+
+@pytest.fixture(autouse=True)
+def fixture_provider_environment(monkeypatch):
+    monkeypatch.setenv("USE_FIXTURES_ON_FAILURE", "true")
+    monkeypatch.setenv("MINING_NEWS_RSS_FEEDS", "")
+    monkeypatch.setenv("MINERAL_PDF_DEFAULT_URL", "")
+    monkeypatch.setenv("PRICE_DATA_FILE", "")
+    monkeypatch.setenv("PRICE_DATA_URL", "")
 
 
 class ConfiguredPriceRecordingToolAdapter(RecordingToolAdapter):

@@ -3,7 +3,13 @@ from mcp_servers.mining_news import tools
 from mcp_servers.mining_news.tools import fetch_article, search
 
 
-def test_search_uses_fixture_news():
+def test_search_uses_fixture_news(monkeypatch):
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(mining_news_rss_feeds="", use_fixtures_on_failure=True),
+    )
+
     result = search("Pilbara lithium", days=7, limit=2)
     assert result.items
     assert result.items[0].title
@@ -24,7 +30,13 @@ def test_search_rejects_blank_query_without_returning_fixture_noise():
     assert any("query" in warning.lower() for warning in result.warnings)
 
 
-def test_search_respects_day_window_and_limit():
+def test_search_respects_day_window_and_limit(monkeypatch):
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(mining_news_rss_feeds="", use_fixtures_on_failure=True),
+    )
+
     result = search("Pilbara lithium", days=1, limit=10)
 
     assert [item.url for item in result.items] == ["https://example.com/pilbara-lithium-policy"]
@@ -121,3 +133,17 @@ def test_search_does_not_use_fixture_when_fallback_disabled(monkeypatch):
     assert result.items == []
     assert result.fallback_used is False
     assert any("rss unavailable" in warning.lower() for warning in result.warnings)
+
+
+def test_search_does_not_use_fixture_without_feeds_when_fallback_disabled(monkeypatch):
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(mining_news_rss_feeds="", use_fixtures_on_failure=False),
+    )
+
+    result = search("Pilbara lithium", days=7, limit=3)
+
+    assert result.items == []
+    assert result.fallback_used is False
+    assert any("MINING_NEWS_RSS_FEEDS" in warning for warning in result.warnings)

@@ -1,9 +1,24 @@
 import json
 
-from mining_agent_shared.models import PriceQuote
+import pytest
+
 from mining_agent_shared.config import Settings
+from mining_agent_shared.models import PriceQuote
 import mcp_servers.lme_price.tools as tools
 from mcp_servers.lme_price.tools import get_price, get_trend
+
+
+@pytest.fixture(autouse=True)
+def fixture_price_settings(monkeypatch):
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(
+            use_fixtures_on_failure=True,
+            price_data_file="",
+            price_data_url="",
+        ),
+    )
 
 
 def test_get_trend_returns_fixture_change():
