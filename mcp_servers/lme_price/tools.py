@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
-from pathlib import Path
 
+from mining_agent_shared.config import get_settings
 from mining_agent_shared.models import PricePoint, PriceQuote, PriceTrend
+from mcp_servers.lme_price.providers import (
+    ConfiguredPriceProvider,
+    FixturePriceProvider,
+    PriceDataset,
+)
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-FIXTURE_PATH = ROOT_DIR / "data" / "fixtures" / "prices.json"
 COMMODITY_ALIASES = {
     "li": "lithium",
     "lithium carbonate": "lithium",
     "lithium hydroxide": "lithium",
     "cu": "copper",
 }
-
-
-def _load_prices() -> dict:
-    return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
 
 
 def _normalize_commodity(commodity: str) -> str:
@@ -45,7 +43,7 @@ def _parse_date(value: str) -> date:
 
 def _points_for_payload(payload: dict) -> list[PricePoint]:
     return sorted(
-        [PricePoint(**point) for point in payload["points"]],
+        [PricePoint(**point) for point in payload.get("points", [])],
         key=lambda point: point.date,
     )
 
@@ -70,10 +68,43 @@ def _trend_label(change_pct: float | None) -> str:
     return "flat"
 
 
+def _load_dataset() -> PriceDataset:
+    settings = get_settings()
+    price_data_file = settings.price_data_file.strip()
+    price_data_url = settings.price_data_url.strip()
+    configured_source = price_data_file or price_data_url
+
+    if configured_source:
+        try:
+            return ConfiguredPriceProvider(price_data_file, price_data_url).load()
+        except Exception as exc:
+            warning = f"Configured price data source failed: {exc}"
+            if settings.use_fixtures_on_failure:
+                return FixturePriceProvider().load([warning])
+            return PriceDataset(
+                data={},
+                source=configured_source,
+                fallback_used=False,
+                warnings=[warning],
+            )
+
+    if settings.use_fixtures_on_failure:
+        return FixturePriceProvider().load()
+
+    return PriceDataset(
+        data={},
+        source="",
+        fallback_used=False,
+        warnings=["No price data source configured; set PRICE_DATA_FILE or PRICE_DATA_URL."],
+    )
+
+
 def get_trend(commodity: str, days: int = 30) -> PriceTrend:
-    data = _load_prices()
+    dataset = _load_dataset()
+    data = dataset.data
     key = _normalize_commodity(commodity)
     days, warnings = _coerce_days(days)
+    warnings = [*dataset.warnings, *warnings]
 
     if key not in data:
         return PriceTrend(
@@ -81,8 +112,8 @@ def get_trend(commodity: str, days: int = 30) -> PriceTrend:
             days=days,
             points=[],
             trend="insufficient_data",
-            source="fixture",
-            fallback_used=True,
+            source=dataset.source,
+            fallback_used=dataset.fallback_used,
             warnings=[*warnings, f"Unsupported commodity: {commodity}"],
         )
 
@@ -104,28 +135,29 @@ def get_trend(commodity: str, days: int = 30) -> PriceTrend:
         trend=trend,
         currency=payload.get("currency", "USD"),
         unit=payload.get("unit", "t"),
-        source="fixture",
-        fallback_used=True,
-        warnings=[*warnings, "Using fixture price data for reproducible demo."],
+        source=dataset.source,
+        fallback_used=dataset.fallback_used,
+        warnings=warnings,
     )
 
 
 def get_price(commodity: str, date: str | None = None) -> PriceQuote:
-    data = _load_prices()
+    dataset = _load_dataset()
+    data = dataset.data
     key = _normalize_commodity(commodity)
     if key not in data:
         return PriceQuote(
             commodity=key,
             date=date,
             price=None,
-            source="fixture",
-            fallback_used=True,
-            warnings=[f"Unsupported commodity: {commodity}"],
+            source=dataset.source,
+            fallback_used=dataset.fallback_used,
+            warnings=[*dataset.warnings, f"Unsupported commodity: {commodity}"],
         )
 
     payload = data[key]
     points = _points_for_payload(payload)
-    warnings = ["Using fixture price data for reproducible demo."]
+    warnings = list(dataset.warnings)
 
     if not points:
         return PriceQuote(
@@ -134,8 +166,8 @@ def get_price(commodity: str, date: str | None = None) -> PriceQuote:
             price=None,
             currency=payload.get("currency", "USD"),
             unit=payload.get("unit", "t"),
-            source="fixture",
-            fallback_used=True,
+            source=dataset.source,
+            fallback_used=dataset.fallback_used,
             warnings=[*warnings, f"No price points available for {key}."],
         )
 
@@ -169,7 +201,7 @@ def get_price(commodity: str, date: str | None = None) -> PriceQuote:
         price=point.price,
         currency=payload.get("currency", "USD"),
         unit=payload.get("unit", "t"),
-        source="fixture",
-        fallback_used=True,
+        source=dataset.source,
+        fallback_used=dataset.fallback_used,
         warnings=warnings,
     )
