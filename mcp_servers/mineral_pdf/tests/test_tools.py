@@ -1,4 +1,7 @@
+from mcp_servers.mineral_pdf.parser import parse_resource_pages
+import mcp_servers.mineral_pdf.tools as tools
 from mcp_servers.mineral_pdf.tools import extract_resources
+from mining_agent_shared.config import Settings
 
 
 def _minimal_pdf_with_text(lines: list[str]) -> bytes:
@@ -56,3 +59,62 @@ def test_extract_resources_reads_local_pdf(tmp_path):
     assert result.abstain is False
     assert result.fallback_used is False
     assert [resource.category for resource in result.resources] == ["Indicated", "Inferred"]
+    assert {resource.page for resource in result.resources} == {1}
+
+
+def test_extract_resources_abstains_without_pdf_source(monkeypatch):
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(mineral_pdf_default_url="", use_fixtures_on_failure=True),
+    )
+
+    result = extract_resources(None, project_name="Pilbara")
+
+    assert result.project_name == "Pilbara"
+    assert result.source_url == ""
+    assert result.resources == []
+    assert result.abstain is True
+    assert result.fallback_used is False
+    assert any("PDF source" in warning for warning in result.warnings)
+
+
+def test_extract_resources_uses_default_pdf_url_from_settings(tmp_path, monkeypatch):
+    pdf_path = tmp_path / "configured-resource.pdf"
+    pdf_path.write_bytes(
+        _minimal_pdf_with_text(["Indicated 12.5 Mt 1.10% Li2O 0.15 Mt LCE"])
+    )
+    monkeypatch.setattr(
+        tools,
+        "get_settings",
+        lambda: Settings(mineral_pdf_default_url=str(pdf_path)),
+    )
+
+    result = extract_resources(None, project_name="Configured")
+
+    assert result.project_name == "Configured"
+    assert result.source_url == str(pdf_path)
+    assert result.abstain is False
+    assert result.fallback_used is False
+    assert [resource.category for resource in result.resources] == ["Indicated"]
+
+
+def test_parser_handles_common_ni_43101_resource_wording_with_pages():
+    resources = parse_resource_pages(
+        [
+            (
+                12,
+                """
+                Mineral Resource Estimate
+                Indicated Resources 120.5 million tonnes at 1.25% Li2O containing 1.50 Mt LCE
+                Inferred Resources 80.2 Mt at 1.05% Li2O containing 0.90 Mt LCE
+                """,
+            )
+        ]
+    )
+
+    assert [resource.category for resource in resources] == ["Indicated", "Inferred"]
+    assert resources[0].ore_tonnage == 120.5
+    assert resources[0].ore_tonnage_unit == "Mt"
+    assert resources[0].page == 12
+    assert resources[1].contained_metal == 0.9

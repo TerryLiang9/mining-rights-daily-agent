@@ -41,6 +41,7 @@ function TraceStatusIcon({ trace }: { trace: ToolTrace }) {
 
 export default function App() {
   const [query, setQuery] = useState(sampleQueries[0]);
+  const [pdfUrl, setPdfUrl] = useState("");
   const [days, setDays] = useState(7);
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +66,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      setReport(await createReport(trimmedQuery, { days }));
+      setReport(await createReport(trimmedQuery, { days, pdfUrl }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -105,6 +106,17 @@ export default function App() {
             max={90}
             value={days}
             onChange={(event) => setDays(Number(event.target.value))}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="pdf-url">PDF 路径或 URL</label>
+          <input
+            id="pdf-url"
+            value={pdfUrl}
+            onChange={(event) => setPdfUrl(event.target.value)}
+            placeholder="data/pdfs/report.pdf 或 https://example.com/report.pdf"
+            spellCheck={false}
           />
         </div>
 

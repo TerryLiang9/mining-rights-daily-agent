@@ -8,11 +8,13 @@ from urllib.parse import urlparse
 import httpx
 from pypdf import PdfReader
 
-from mcp_servers.mineral_pdf.parser import parse_resource_lines
+from mcp_servers.mineral_pdf.parser import parse_resource_pages
 from mining_agent_shared.models import ResourceExtractionResult, ResourceItem
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 FIXTURE_PATH = ROOT_DIR / "data" / "fixtures" / "resources.json"
+MAX_PDF_BYTES = 30 * 1024 * 1024
+REQUEST_TIMEOUT_SECONDS = 30
 
 
 def _load_fixture() -> ResourceExtractionResult:
@@ -30,20 +32,33 @@ def _load_fixture() -> ResourceExtractionResult:
 def _read_pdf_bytes(pdf_url: str) -> bytes:
     parsed = urlparse(pdf_url)
     if parsed.scheme in {"http", "https"}:
-        response = httpx.get(pdf_url, timeout=30)
+        response = httpx.get(pdf_url, timeout=REQUEST_TIMEOUT_SECONDS, follow_redirects=True)
         response.raise_for_status()
+        content_type = response.headers.get("content-type", "").lower()
+        if content_type and "pdf" not in content_type and "octet-stream" not in content_type:
+            raise ValueError(f"URL did not return a PDF content type: {content_type}")
+        if len(response.content) > MAX_PDF_BYTES:
+            raise ValueError("PDF is larger than the configured maximum size.")
         return response.content
 
     path = Path(pdf_url)
+    if parsed.scheme and not path.is_absolute():
+        raise ValueError(f"Unsupported PDF URL scheme: {parsed.scheme}")
     if not path.is_absolute():
         path = ROOT_DIR / path
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"PDF path does not exist: {path}")
+    if path.stat().st_size > MAX_PDF_BYTES:
+        raise ValueError("PDF is larger than the configured maximum size.")
     return path.read_bytes()
 
 
-def _extract_pdf_text(pdf_bytes: bytes) -> str:
+def _extract_pdf_pages(pdf_bytes: bytes) -> list[tuple[int, str]]:
     reader = PdfReader(BytesIO(pdf_bytes))
-    page_text = [page.extract_text() or "" for page in reader.pages]
-    return "\n".join(page_text)
+    return [
+        (index, page.extract_text() or "")
+        for index, page in enumerate(reader.pages, start=1)
+    ]
 
 
 def extract_resources(pdf_url: str, project_name: str | None = None) -> ResourceExtractionResult:
@@ -51,7 +66,7 @@ def extract_resources(pdf_url: str, project_name: str | None = None) -> Resource
         return _load_fixture()
 
     try:
-        text = _extract_pdf_text(_read_pdf_bytes(pdf_url))
+        pages = _extract_pdf_pages(_read_pdf_bytes(pdf_url))
     except Exception as exc:
         return ResourceExtractionResult(
             project_name=project_name or "unknown",
@@ -63,7 +78,7 @@ def extract_resources(pdf_url: str, project_name: str | None = None) -> Resource
             warnings=[f"PDF extraction failed: {exc}"],
         )
 
-    resources = parse_resource_lines(text)
+    resources = parse_resource_pages(pages)
     if resources:
         return ResourceExtractionResult(
             project_name=project_name or "unknown",

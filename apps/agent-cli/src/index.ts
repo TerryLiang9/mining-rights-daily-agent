@@ -9,7 +9,7 @@ async function main(args: string[]): Promise<void> {
     return;
   }
 
-  const report = await createReport(parsed.query);
+  const report = await createReport(parsed.query, { pdfUrl: parsed.pdfUrl });
   console.log(formatReportOutput(report));
 }
 

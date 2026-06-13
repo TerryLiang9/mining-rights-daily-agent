@@ -40,6 +40,7 @@ export type FetchLike = (url: string, init: FetchInit) => Promise<FetchResponse>
 type CreateReportOptions = {
   baseUrl?: string;
   days?: number;
+  pdfUrl?: string;
   fetchImpl?: FetchLike;
 };
 
@@ -65,11 +66,15 @@ export async function createReport(
     options.baseUrl ?? import.meta.env.VITE_AGENT_API_URL ?? "http://localhost:8000";
   const days = options.days ?? 7;
   const fetchImpl = options.fetchImpl ?? (globalThis.fetch as unknown as FetchLike);
+  const body: Record<string, unknown> = { query, days };
+  if (options.pdfUrl?.trim()) {
+    body.pdf_url = options.pdfUrl.trim();
+  }
 
   const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/reports`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, days }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

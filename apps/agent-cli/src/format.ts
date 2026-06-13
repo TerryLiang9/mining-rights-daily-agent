@@ -1,7 +1,7 @@
 import type { ReportResponse } from "./agent-api.js";
 
 export type ParsedCommand =
-  | { command: "report"; query: string }
+  | { command: "report"; query: string; pdfUrl?: string }
   | { command: "help"; query: "" };
 
 export function parseCommand(args: string[]): ParsedCommand {
@@ -11,9 +11,26 @@ export function parseCommand(args: string[]): ParsedCommand {
     return { command: "help", query: "" };
   }
 
+  const queryParts: string[] = [];
+  let pdfUrl: string | undefined;
+  for (let index = 0; index < rest.length; index += 1) {
+    const value = rest[index];
+    if (value === "--pdf") {
+      pdfUrl = rest[index + 1];
+      index += 1;
+      continue;
+    }
+    if (value.startsWith("--pdf=")) {
+      pdfUrl = value.slice("--pdf=".length);
+      continue;
+    }
+    queryParts.push(value);
+  }
+
   return {
     command,
-    query: rest.join(" ").trim(),
+    query: queryParts.join(" ").trim(),
+    pdfUrl,
   };
 }
 
@@ -47,5 +64,5 @@ export function formatReportOutput(report: ReportResponse): string {
 }
 
 export function usage(): string {
-  return 'Usage: pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报"';
+  return 'Usage: pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报" --pdf data/pdfs/report.pdf';
 }

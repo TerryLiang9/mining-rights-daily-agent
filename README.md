@@ -35,6 +35,12 @@ Open another terminal:
 pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报"
 ```
 
+Use a custom local or HTTP PDF report:
+
+```bash
+pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报" --pdf data/pdfs/your-report.pdf
+```
+
 Run the Web Dashboard:
 
 ```bash
@@ -48,7 +54,7 @@ Open http://localhost:5173.
 ```bash
 curl -X POST http://localhost:8000/reports ^
   -H "Content-Type: application/json" ^
-  -d "{\"query\":\"给我生成一份关于 Pilbara 锂矿的今日简报\"}"
+  -d "{\"query\":\"给我生成一份关于 Pilbara 锂矿的今日简报\",\"pdf_url\":\"data/pdfs/your-report.pdf\"}"
 ```
 
 ## MCP Servers

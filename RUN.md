@@ -40,6 +40,12 @@ pnpm install
 pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报"
 ```
 
+Use your own local or HTTP PDF report:
+
+```bash
+pnpm cli report "给我生成一份关于 Pilbara 锂矿的今日简报" --pdf data/pdfs/your-report.pdf
+```
+
 ## Run Web
 
 ```bash
@@ -47,6 +53,8 @@ pnpm --filter web-dashboard dev
 ```
 
 Open http://localhost:5173.
+
+The Web Dashboard includes a `PDF 路径或 URL` field. Leave it blank to use the bundled sample PDF, or enter a local path such as `data/pdfs/your-report.pdf` or an HTTP PDF URL.
 
 ## Run MCP Servers Directly
 

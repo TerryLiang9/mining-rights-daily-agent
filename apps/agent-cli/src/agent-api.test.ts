@@ -33,3 +33,32 @@ test("createReport posts the query to the Agent API reports endpoint", async () 
     days: 7,
   });
 });
+
+test("createReport posts pdf_url when provided", async () => {
+  const calls: Array<{ url: string; init: { body?: string; method?: string } }> = [];
+
+  await createReport("Pilbara lithium brief", {
+    pdfUrl: "data/pdfs/custom-report.pdf",
+    fetchImpl: async (url, init) => {
+      calls.push({ url, init });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => "",
+        json: async () => ({
+          markdown: "# Report",
+          citations: [],
+          tool_trace: [],
+          fallback_used: false,
+          warnings: [],
+        }),
+      };
+    },
+  });
+
+  assert.deepEqual(JSON.parse(calls[0].init.body ?? "{}"), {
+    query: "Pilbara lithium brief",
+    days: 7,
+    pdf_url: "data/pdfs/custom-report.pdf",
+  });
+});

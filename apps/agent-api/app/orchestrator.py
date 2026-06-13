@@ -79,6 +79,7 @@ def _report_has_required_sections(markdown: str) -> bool:
 def generate_report(
     query: str,
     days: int = 7,
+    pdf_url: str | None = None,
     llm_provider: str | None = None,
     tool_adapter: ToolAdapter | None = None,
 ) -> ReportResponse:
@@ -87,6 +88,7 @@ def generate_report(
     adapter = tool_adapter or MCPStdioToolAdapter()
     traces: list[ToolTrace] = []
     warnings: list[str] = []
+    resource_pdf_url = pdf_url.strip() if pdf_url and pdf_url.strip() else SAMPLE_RESOURCE_PDF
 
     start = perf_counter()
     news_query = f"{topic.region} {topic.commodity} mining"
@@ -131,13 +133,13 @@ def generate_report(
         **adapter.call_tool(
             "mineral-pdf-mcp",
             "extract_resources",
-            {"pdf_url": SAMPLE_RESOURCE_PDF, "project_name": topic.region},
+            {"pdf_url": resource_pdf_url, "project_name": topic.region},
         )
     )
     traces.append(
         _trace(
             "mineral-pdf-mcp.extract_resources",
-            {"pdf_url": SAMPLE_RESOURCE_PDF, "project_name": topic.region},
+            {"pdf_url": resource_pdf_url, "project_name": topic.region},
             "fallback" if resources.fallback_used else "success",
             start,
             resources.fallback_used,

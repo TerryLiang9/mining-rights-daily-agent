@@ -21,4 +21,4 @@ def health() -> dict:
 
 @app.post("/reports", response_model=ReportResponse)
 def create_report(request: ReportRequest) -> ReportResponse:
-    return generate_report(request.query, days=request.days)
+    return generate_report(request.query, days=request.days, pdf_url=request.pdf_url)

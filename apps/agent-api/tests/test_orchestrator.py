@@ -22,7 +22,7 @@ class RecordingToolAdapter:
         if (server_name, tool_name) == ("mineral-pdf-mcp", "extract_resources"):
             return extract_resources(**arguments).model_dump()
         if (server_name, tool_name) == ("lme-price-mcp", "get_price"):
-            return get_price(**arguments)
+            return get_price(**arguments).model_dump()
         if (server_name, tool_name) == ("lme-price-mcp", "get_trend"):
             return get_trend(**arguments).model_dump()
         raise AssertionError(f"Unexpected tool call: {server_name}.{tool_name}")
@@ -62,7 +62,7 @@ def test_generate_report_uses_tool_adapter_for_required_mcp_calls():
     assert "lme-price-mcp.get_price" in {trace.tool for trace in response.tool_trace}
 
 
-def test_generate_report_uses_pdf_path_for_resource_extraction():
+def test_generate_report_does_not_default_to_sample_pdf_when_pdf_url_missing():
     adapter = RecordingToolAdapter()
 
     generate_report(
@@ -78,7 +78,27 @@ def test_generate_report_uses_pdf_path_for_resource_extraction():
         if (server_name, tool_name) == ("mineral-pdf-mcp", "extract_resources")
     ]
     assert pdf_arguments
-    assert pdf_arguments[0]["pdf_url"].endswith(".pdf")
+    assert pdf_arguments[0]["pdf_url"] is None
+
+
+def test_generate_report_uses_request_pdf_url_when_provided():
+    adapter = RecordingToolAdapter()
+    requested_pdf = "data/pdfs/custom-report.pdf"
+
+    generate_report(
+        "给我生成一份关于 Pilbara 锂矿的今日简报",
+        days=7,
+        pdf_url=requested_pdf,
+        llm_provider="mock",
+        tool_adapter=adapter,
+    )
+
+    pdf_arguments = [
+        arguments
+        for server_name, tool_name, arguments in adapter.arguments
+        if (server_name, tool_name) == ("mineral-pdf-mcp", "extract_resources")
+    ]
+    assert pdf_arguments[0]["pdf_url"] == requested_pdf
 
 
 def test_api_exposes_health_and_report_routes():
@@ -100,3 +120,25 @@ def test_api_exposes_health_and_report_routes():
     assert payload["tool_trace"]
     assert payload["fallback_used"] is True
     assert isinstance(payload["warnings"], list)
+
+
+def test_api_accepts_pdf_url_in_report_request():
+    client = TestClient(app)
+
+    response = client.post(
+        "/reports",
+        json={
+            "query": "给我生成一份关于 Pilbara 锂矿的今日简报",
+            "days": 7,
+            "pdf_url": "data/fixtures/pilbara-resource-sample.pdf",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["markdown"]
+    assert any(
+        trace["tool"] == "mineral-pdf-mcp.extract_resources"
+        and trace["input"]["pdf_url"] == "data/fixtures/pilbara-resource-sample.pdf"
+        for trace in payload["tool_trace"]
+    )

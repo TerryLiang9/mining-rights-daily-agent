@@ -15,7 +15,7 @@ mcp = FastMCP("lme-price-mcp")
 @mcp.tool()
 def get_price(commodity: str, date: str | None = None) -> dict:
     """Get latest or date-specific commodity price."""
-    return get_price_tool(commodity=commodity, date=date)
+    return get_price_tool(commodity=commodity, date=date).model_dump()
 
 
 @mcp.tool()

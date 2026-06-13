@@ -34,3 +34,33 @@ test("createReport calls only the Agent API reports endpoint", async () => {
     days: 7,
   });
 });
+
+test("createReport includes pdf_url when a PDF path is provided", async () => {
+  const calls: Array<{ url: string; init: { body?: string; method?: string } }> = [];
+
+  await createReport("给我生成一份关于 Pilbara 锂矿的今日简报", {
+    pdfUrl: "data/pdfs/custom-report.pdf",
+    fetchImpl: async (url, init) => {
+      calls.push({ url, init });
+      return {
+        ok: true,
+        status: 200,
+        text: async () => "",
+        json: async () => ({
+          markdown: "# Report",
+          citations: [],
+          tool_trace: [],
+          fallback_used: false,
+          warnings: [],
+        }),
+      };
+    },
+    baseUrl: "http://localhost:8000",
+  });
+
+  assert.deepEqual(JSON.parse(calls[0].init.body ?? "{}"), {
+    query: "给我生成一份关于 Pilbara 锂矿的今日简报",
+    days: 7,
+    pdf_url: "data/pdfs/custom-report.pdf",
+  });
+});

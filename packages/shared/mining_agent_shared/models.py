@@ -124,6 +124,7 @@ class EvidencePack(BaseModel):
 class ReportRequest(BaseModel):
     query: str
     days: int = Field(default=7, ge=1, le=90)
+    pdf_url: str | None = None
 
 
 class ReportResponse(BaseModel):

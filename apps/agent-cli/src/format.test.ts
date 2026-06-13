@@ -7,6 +7,7 @@ test("parseCommand accepts report queries after the report command", () => {
   assert.deepEqual(parseCommand(["report", "Pilbara", "lithium"]), {
     command: "report",
     query: "Pilbara lithium",
+    pdfUrl: undefined,
   });
 });
 
@@ -14,7 +15,25 @@ test("parseCommand ignores pnpm forwarded separator before the command", () => {
   assert.deepEqual(parseCommand(["--", "report", "Pilbara", "lithium"]), {
     command: "report",
     query: "Pilbara lithium",
+    pdfUrl: undefined,
   });
+});
+
+test("parseCommand accepts a PDF path after --pdf", () => {
+  assert.deepEqual(
+    parseCommand([
+      "report",
+      "Pilbara",
+      "lithium",
+      "--pdf",
+      "data/pdfs/custom-report.pdf",
+    ]),
+    {
+      command: "report",
+      query: "Pilbara lithium",
+      pdfUrl: "data/pdfs/custom-report.pdf",
+    },
+  );
 });
 
 test("formatReportOutput includes markdown, tool trace, sources, warnings, and fallback state", () => {
