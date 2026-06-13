@@ -1,0 +1,35 @@
+[project]
+name = "mining-rights-daily-agent"
+version = "0.1.0"
+description = "MCP mining rights daily brief agent"
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.12,<5",
+  "fastapi>=0.116,<1",
+  "feedparser>=6.0,<7",
+  "httpx>=0.28,<1",
+  "mcp[cli]>=1.27,<2",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "pypdf>=5,<7",
+  "python-dotenv>=1.0,<2",
+  "uvicorn[standard]>=0.35,<1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-asyncio>=1,<2"
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  ".",
+  "packages/shared",
+  "apps/agent-api"
+]
+testpaths = [
+  "mcp_servers",
+  "apps/agent-api",
+  "eval"
+]

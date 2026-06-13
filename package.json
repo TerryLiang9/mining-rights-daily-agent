@@ -1,0 +1,16 @@
+{
+  "name": "mining-rights-daily-agent",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm --recursive build",
+    "cli": "pnpm --filter agent-cli start --",
+    "dev:web": "pnpm --filter web-dashboard dev",
+    "test:python": "python -m pytest",
+    "verify": "python -m pytest && pnpm --recursive build && docker compose config"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.0"
+  }
+}
