@@ -1,16 +1,16 @@
 {
   "mcpServers": {
-    "mining-news": {
+    "mining-news-mcp": {
       "command": "python",
-      "args": ["mcp_servers/mining_news/server.py"]
+      "args": ["-m", "mcp_servers.mining_news.server"]
     },
-    "mineral-pdf": {
+    "mineral-pdf-mcp": {
       "command": "python",
-      "args": ["mcp_servers/mineral_pdf/server.py"]
+      "args": ["-m", "mcp_servers.mineral_pdf.server"]
     },
-    "lme-price": {
+    "lme-price-mcp": {
       "command": "python",
-      "args": ["mcp_servers/lme_price/server.py"]
+      "args": ["-m", "mcp_servers.lme_price.server"]
     }
   }
 }

@@ -37,6 +37,7 @@ pythonpath = [
 ]
 testpaths = [
   "mcp_servers",
+  "packages/shared",
   "apps/agent-api",
   "eval"
 ]

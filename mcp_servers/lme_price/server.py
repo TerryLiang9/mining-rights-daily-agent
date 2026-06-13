@@ -1,3 +1,9 @@
+from pathlib import Path
+import sys
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from mcp.server.fastmcp import FastMCP
 
 from mcp_servers.lme_price.tools import get_price as get_price_tool

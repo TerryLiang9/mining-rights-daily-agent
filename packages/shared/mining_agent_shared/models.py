@@ -83,6 +83,17 @@ class PricePoint(BaseModel):
     price: float
 
 
+class PriceQuote(BaseModel):
+    commodity: str
+    date: str | None = None
+    price: float | None = None
+    currency: str = "USD"
+    unit: str = "t"
+    source: str
+    fallback_used: bool = False
+    warnings: list[str] = Field(default_factory=list)
+
+
 class PriceTrend(BaseModel):
     commodity: str
     days: int
@@ -102,6 +113,7 @@ class EvidencePack(BaseModel):
     articles: list[Article] = Field(default_factory=list)
     resources: list[ResourceItem] = Field(default_factory=list)
     prices: list[PricePoint] = Field(default_factory=list)
+    current_price: PriceQuote | None = None
     price_trend: PriceTrend | None = None
     citations: list[Citation] = Field(default_factory=list)
     tool_trace: list[ToolTrace] = Field(default_factory=list)

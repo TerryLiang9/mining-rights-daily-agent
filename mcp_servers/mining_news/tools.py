@@ -6,7 +6,8 @@ from pathlib import Path
 
 from mining_agent_shared.models import Article, NewsItem, NewsSearchResult
 
-FIXTURE_PATH = Path("data/fixtures/news.json")
+ROOT_DIR = Path(__file__).resolve().parents[2]
+FIXTURE_PATH = ROOT_DIR / "data" / "fixtures" / "news.json"
 
 
 def _load_fixture_items() -> list[NewsItem]:

@@ -5,12 +5,22 @@ An evidence-first MCP Agent for the Lingyun Zhikuang interview task. It generate
 ## What It Demonstrates
 
 - Three MCP servers: `mining-news-mcp`, `mineral-pdf-mcp`, and `lme-price-mcp`.
-- Deterministic Agent orchestration before LLM writing.
+- Deterministic Agent orchestration before LLM writing, with tool calls routed through MCP stdio by default.
 - Ollama Gemma local LLM generation with mock fallback.
 - TypeScript CLI and React Web Dashboard.
 - Explicit citations, tool trace, fallback flags, warnings, and data quality disclosure.
 
 ## Quick Start
+
+Docker path:
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:5173.
+
+Local development path:
 
 ```bash
 cp .env.example .env
@@ -48,17 +58,17 @@ The MCP servers are defined in `mcp-config.json` and can be connected to Claude 
 ```json
 {
   "mcpServers": {
-    "mining-news": {
+    "mining-news-mcp": {
       "command": "python",
-      "args": ["mcp_servers/mining_news/server.py"]
+      "args": ["-m", "mcp_servers.mining_news.server"]
     },
-    "mineral-pdf": {
+    "mineral-pdf-mcp": {
       "command": "python",
-      "args": ["mcp_servers/mineral_pdf/server.py"]
+      "args": ["-m", "mcp_servers.mineral_pdf.server"]
     },
-    "lme-price": {
+    "lme-price-mcp": {
       "command": "python",
-      "args": ["mcp_servers/lme_price/server.py"]
+      "args": ["-m", "mcp_servers.lme_price.server"]
     }
   }
 }
@@ -75,4 +85,4 @@ docker compose config
 
 ## Design Choice
 
-The Agent uses a deterministic workflow instead of unrestricted ReAct planning because local Gemma is better suited for summarization than strict tool planning. The system first builds an evidence pack, then asks the model to write only from that evidence. If a data source fails, fixture data is used and disclosed.
+The Agent uses a deterministic workflow instead of unrestricted ReAct planning because local Gemma is better suited for summarization than strict tool planning. The system calls the three MCP servers through stdio, builds an evidence pack, then asks the model to write only from that evidence. If a data source fails, fixture data is used and disclosed.

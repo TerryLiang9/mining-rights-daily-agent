@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md mcp-config.json ./
 COPY packages ./packages
 COPY mcp_servers ./mcp_servers
 COPY apps/agent-api ./apps/agent-api

@@ -16,6 +16,14 @@ class MockLLMProvider:
             )
             or "- 暂无资源量证据。"
         )
+        if evidence.current_price and evidence.current_price.price is not None:
+            price_line = (
+                f"- 当前价格：{evidence.current_price.price:g} "
+                f"{evidence.current_price.currency}/{evidence.current_price.unit} "
+                f"({evidence.current_price.date})。"
+            )
+        else:
+            price_line = "- 当前价格：暂无价格证据。"
         trend = evidence.price_trend.trend if evidence.price_trend else "insufficient_data"
 
         return f"""# {region} {commodity} 矿权日报
@@ -32,6 +40,7 @@ class MockLLMProvider:
 {resource_lines}
 
 ## 价格趋势
+{price_line}
 - 近 30 天趋势：{trend}。
 
 ## 风险提示

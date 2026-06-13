@@ -1,15 +1,32 @@
 from __future__ import annotations
 
 from time import perf_counter
+from typing import Any, Protocol
 
-from app.adapters.local_tools import extract_resources, fetch_article, get_trend, search
+from app.adapters.mcp_stdio import MCPStdioToolAdapter
 from app.llm.mock import MockLLMProvider
 from app.llm.ollama import OllamaProvider
 from mining_agent_shared.citations import make_citation
 from mining_agent_shared.config import get_settings
-from mining_agent_shared.models import EvidencePack, ReportResponse, ToolTrace, Topic
+from mining_agent_shared.models import (
+    Article,
+    EvidencePack,
+    NewsSearchResult,
+    PriceQuote,
+    PriceTrend,
+    ReportResponse,
+    ResourceExtractionResult,
+    ToolTrace,
+    Topic,
+)
+
+
+class ToolAdapter(Protocol):
+    def call_tool(self, server_name: str, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        ...
 
 REQUIRED_REPORT_SECTIONS = ("Executive Summary", "风险提示", "数据质量说明", "Sources")
+SAMPLE_RESOURCE_PDF = "data/fixtures/pilbara-resource-sample.pdf"
 
 
 def parse_topic(query: str, days: int) -> Topic:
@@ -59,18 +76,31 @@ def _report_has_required_sections(markdown: str) -> bool:
     return all(section in markdown for section in REQUIRED_REPORT_SECTIONS)
 
 
-def generate_report(query: str, days: int = 7, llm_provider: str | None = None) -> ReportResponse:
+def generate_report(
+    query: str,
+    days: int = 7,
+    llm_provider: str | None = None,
+    tool_adapter: ToolAdapter | None = None,
+) -> ReportResponse:
     settings = get_settings()
     topic = parse_topic(query, days)
+    adapter = tool_adapter or MCPStdioToolAdapter()
     traces: list[ToolTrace] = []
     warnings: list[str] = []
 
     start = perf_counter()
-    news_result = search(f"{topic.region} {topic.commodity} mining", days=days, limit=3)
+    news_query = f"{topic.region} {topic.commodity} mining"
+    news_result = NewsSearchResult(
+        **adapter.call_tool(
+            "mining-news-mcp",
+            "search",
+            {"query": news_query, "days": days, "limit": 3},
+        )
+    )
     traces.append(
         _trace(
             "mining-news-mcp.search",
-            {"query": f"{topic.region} {topic.commodity} mining", "days": days, "limit": 3},
+            {"query": news_query, "days": days, "limit": 3},
             "fallback" if news_result.fallback_used else "success",
             start,
             news_result.fallback_used,
@@ -81,7 +111,9 @@ def generate_report(query: str, days: int = 7, llm_provider: str | None = None) 
     articles = []
     for item in news_result.items[:2]:
         start = perf_counter()
-        article = fetch_article(item.url)
+        article = Article(
+            **adapter.call_tool("mining-news-mcp", "fetch_article", {"url": item.url})
+        )
         articles.append(article)
         traces.append(
             _trace(
@@ -95,11 +127,17 @@ def generate_report(query: str, days: int = 7, llm_provider: str | None = None) 
         warnings.extend(article.warnings)
 
     start = perf_counter()
-    resources = extract_resources("fixture://pilbara-lithium", project_name=topic.region)
+    resources = ResourceExtractionResult(
+        **adapter.call_tool(
+            "mineral-pdf-mcp",
+            "extract_resources",
+            {"pdf_url": SAMPLE_RESOURCE_PDF, "project_name": topic.region},
+        )
+    )
     traces.append(
         _trace(
             "mineral-pdf-mcp.extract_resources",
-            {"pdf_url": "fixture://pilbara-lithium", "project_name": topic.region},
+            {"pdf_url": SAMPLE_RESOURCE_PDF, "project_name": topic.region},
             "fallback" if resources.fallback_used else "success",
             start,
             resources.fallback_used,
@@ -108,7 +146,13 @@ def generate_report(query: str, days: int = 7, llm_provider: str | None = None) 
     warnings.extend(resources.warnings)
 
     start = perf_counter()
-    price_trend = get_trend(topic.commodity, days=30)
+    price_trend = PriceTrend(
+        **adapter.call_tool(
+            "lme-price-mcp",
+            "get_trend",
+            {"commodity": topic.commodity, "days": 30},
+        )
+    )
     traces.append(
         _trace(
             "lme-price-mcp.get_trend",
@@ -119,6 +163,28 @@ def generate_report(query: str, days: int = 7, llm_provider: str | None = None) 
         )
     )
     warnings.extend(price_trend.warnings)
+
+    start = perf_counter()
+    price_quote = PriceQuote(
+        **adapter.call_tool(
+            "lme-price-mcp",
+            "get_price",
+            {
+                "commodity": topic.commodity,
+                "date": price_trend.points[-1].date if price_trend.points else None,
+            },
+        )
+    )
+    traces.append(
+        _trace(
+            "lme-price-mcp.get_price",
+            {"commodity": topic.commodity, "date": price_quote.date},
+            "fallback" if price_quote.fallback_used else "success",
+            start,
+            price_quote.fallback_used,
+        )
+    )
+    warnings.extend(price_quote.warnings)
 
     citations = [
         *[make_citation(item.title, item.url, "news") for item in news_result.items],
@@ -132,6 +198,7 @@ def generate_report(query: str, days: int = 7, llm_provider: str | None = None) 
         articles=articles,
         resources=resources.resources,
         prices=price_trend.points,
+        current_price=price_quote,
         price_trend=price_trend,
         citations=citations,
         tool_trace=traces,
