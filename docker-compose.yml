@@ -1,0 +1,18 @@
+services:
+  agent-api:
+    build:
+      context: .
+      dockerfile: apps/agent-api/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: apps/web-dashboard/Dockerfile
+    depends_on:
+      - agent-api
+    ports:
+      - "5173:5173"
