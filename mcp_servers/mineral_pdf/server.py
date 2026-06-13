@@ -12,7 +12,7 @@ mcp = FastMCP("mineral-pdf-mcp")
 
 
 @mcp.tool()
-def extract_resources(pdf_url: str, project_name: str | None = None) -> dict:
+def extract_resources(pdf_url: str | None = None, project_name: str | None = None) -> dict:
     """Extract Indicated and Inferred resources from a mineral technical report."""
     return extract_resources_tool(pdf_url=pdf_url, project_name=project_name).model_dump()
 

@@ -26,7 +26,6 @@ class ToolAdapter(Protocol):
         ...
 
 REQUIRED_REPORT_SECTIONS = ("Executive Summary", "风险提示", "数据质量说明", "Sources")
-SAMPLE_RESOURCE_PDF = "data/fixtures/pilbara-resource-sample.pdf"
 
 
 def parse_topic(query: str, days: int) -> Topic:
@@ -88,7 +87,7 @@ def generate_report(
     adapter = tool_adapter or MCPStdioToolAdapter()
     traces: list[ToolTrace] = []
     warnings: list[str] = []
-    resource_pdf_url = pdf_url.strip() if pdf_url and pdf_url.strip() else SAMPLE_RESOURCE_PDF
+    resource_pdf_url = pdf_url.strip() if pdf_url and pdf_url.strip() else None
 
     start = perf_counter()
     news_query = f"{topic.region} {topic.commodity} mining"
