@@ -57,6 +57,16 @@ curl -X POST http://localhost:8000/reports ^
   -d "{\"query\":\"给我生成一份关于 Pilbara 锂矿的今日简报\",\"pdf_url\":\"data/pdfs/your-report.pdf\"}"
 ```
 
+## Data Providers
+
+Copy `.env.example` to `.env` and configure live or licensed sources when available:
+
+- `MINING_NEWS_RSS_FEEDS`: comma-separated RSS feed URLs used by `mining-news-mcp`.
+- `MINERAL_PDF_DEFAULT_URL`: optional default local path or HTTP PDF URL for NI 43-101 extraction. If neither the request nor this setting provides a PDF, the PDF tool returns `abstain=true`.
+- `PRICE_DATA_FILE`: local JSON or CSV price data source.
+- `PRICE_DATA_URL`: HTTP JSON or CSV price data source.
+- `USE_FIXTURES_ON_FAILURE`: permits fixture fallback for news and price sources. PDF fixture data is used only when explicitly requested with `fixture://` or the fixture JSON path.
+
 ## MCP Servers
 
 The MCP servers are defined in `mcp-config.json` and can be connected to Claude Desktop or Cursor from the repository root:
@@ -91,4 +101,4 @@ docker compose config
 
 ## Design Choice
 
-The Agent uses a deterministic workflow instead of unrestricted ReAct planning because local Gemma is better suited for summarization than strict tool planning. The system calls the three MCP servers through stdio, builds an evidence pack, then asks the model to write only from that evidence. If a data source fails, fixture data is used and disclosed.
+The Agent uses a deterministic workflow instead of unrestricted ReAct planning because local Gemma is better suited for summarization than strict tool planning. The system calls the three MCP servers through stdio, builds an evidence pack, then asks the model to write only from that evidence. Provider fallback and abstain states are returned in tool traces, warnings, citations, CLI output, Web Dashboard, and the generated report.

@@ -54,7 +54,19 @@ pnpm --filter web-dashboard dev
 
 Open http://localhost:5173.
 
-The Web Dashboard includes a `PDF 路径或 URL` field. Leave it blank to use the bundled sample PDF, or enter a local path such as `data/pdfs/your-report.pdf` or an HTTP PDF URL.
+The Web Dashboard includes a `PDF 路径或 URL` field. Leave it blank to let the API use `MINERAL_PDF_DEFAULT_URL`; if neither is provided, the PDF tool returns `abstain=true` instead of using demo data. Enter a local path such as `data/pdfs/your-report.pdf` or an HTTP PDF URL to extract live report evidence.
+
+## Configure Data Providers
+
+```bash
+MINING_NEWS_RSS_FEEDS=https://example.com/mining/rss.xml
+MINERAL_PDF_DEFAULT_URL=data/pdfs/your-report.pdf
+PRICE_DATA_FILE=data/live/prices.json
+PRICE_DATA_URL=
+USE_FIXTURES_ON_FAILURE=true
+```
+
+`PRICE_DATA_FILE` can point to JSON in the same shape as `data/fixtures/prices.json` or to CSV with `commodity,date,price,currency,unit` columns.
 
 ## Run MCP Servers Directly
 

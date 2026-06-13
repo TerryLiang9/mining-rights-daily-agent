@@ -1,6 +1,6 @@
 # Data Notes
 
-The project uses fixture data when external mining news, PDF, or price sources are unavailable. Fallback use is explicit in the API response, CLI output, Web Dashboard, and generated report.
+The project separates live/configured providers from fixture providers for mining news, PDF resource extraction, and price data. Fallback or abstain states are explicit in the API response, CLI output, Web Dashboard, and generated report.
 
 ## Core Schemas
 
@@ -16,6 +16,7 @@ The project uses fixture data when external mining news, PDF, or price sources a
 - Article fetching only accepts HTTP(S) URLs and rejects unsafe local schemes.
 - Missing or unreadable PDF evidence returns `abstain=true`; fixture resource data is used only for explicit `fixture://` or fixture JSON requests.
 - PDF resource extraction records page numbers for text-based PDFs when `pypdf` can extract them.
+- Price tools can read JSON or CSV from `PRICE_DATA_FILE` or `PRICE_DATA_URL`; returned citations use the provider source instead of a hard-coded fixture path.
 - Unsupported commodities and missing exact price dates return structured warnings; date-specific prices use the nearest prior close when available.
 - Generated reports must disclose fallback data.
 
@@ -29,10 +30,10 @@ The interview task asks for mining news, mineral PDF extraction, and price trend
 - the Web Dashboard,
 - and the generated Markdown report.
 
-This keeps the demo reproducible while preserving clear replacement points for production sources. The included price data is still fixture data, not a licensed live LME feed.
+This keeps the demo reproducible while preserving clear replacement points for production sources. The included price data is still fixture data, not a licensed live LME feed. Set `USE_FIXTURES_ON_FAILURE=false` to force missing news or price sources to return empty results with warnings instead of fixture data.
 
 ## Replacement Points
 
-- `mcp_servers/mining_news/tools.py`: configure RSS feeds with `MINING_NEWS_RSS_FEEDS` or replace the provider with a licensed/news-search connector.
-- `mcp_servers/mineral_pdf/tools.py`: improve parser/model extraction for scanned PDFs and complex NI 43-101 tables.
-- `mcp_servers/lme_price/tools.py`: replace fixture prices with licensed LME/SHFE/market-data connectors.
+- `mcp_servers/mining_news/providers.py`: configure RSS feeds with `MINING_NEWS_RSS_FEEDS` or replace the provider with a licensed/news-search connector.
+- `mcp_servers/mineral_pdf/providers.py`: improve parser/model extraction for scanned PDFs and complex NI 43-101 tables.
+- `mcp_servers/lme_price/providers.py`: replace configured file/URL ingestion with licensed LME/SHFE/market-data connectors.
