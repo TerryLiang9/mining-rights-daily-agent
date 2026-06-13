@@ -187,10 +187,11 @@ def generate_report(
     )
     warnings.extend(price_quote.warnings)
 
+    price_source = price_quote.source or price_trend.source
     citations = [
         *[make_citation(item.title, item.url, "news") for item in news_result.items],
         make_citation(resources.report_title, resources.source_url, "pdf"),
-        make_citation(f"{topic.commodity} price data", "data/fixtures/prices.json", "price"),
+        make_citation(f"{topic.commodity} price data", price_source, "price"),
     ]
     fallback_used = any(trace.fallback_used for trace in traces)
     evidence = EvidencePack(

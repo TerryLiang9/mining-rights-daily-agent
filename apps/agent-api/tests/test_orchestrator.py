@@ -28,6 +28,16 @@ class RecordingToolAdapter:
         raise AssertionError(f"Unexpected tool call: {server_name}.{tool_name}")
 
 
+class ConfiguredPriceRecordingToolAdapter(RecordingToolAdapter):
+    def call_tool(self, server_name: str, tool_name: str, arguments: dict) -> dict:
+        result = super().call_tool(server_name, tool_name, arguments)
+        if server_name == "lme-price-mcp":
+            result["source"] = "data/live/prices.json"
+            result["fallback_used"] = False
+            result["warnings"] = []
+        return result
+
+
 def test_generate_report_contains_required_sections():
     response = generate_report("给我生成一份关于 Pilbara 锂矿的今日简报", days=7, llm_provider="mock")
 
@@ -99,6 +109,23 @@ def test_generate_report_uses_request_pdf_url_when_provided():
         if (server_name, tool_name) == ("mineral-pdf-mcp", "extract_resources")
     ]
     assert pdf_arguments[0]["pdf_url"] == requested_pdf
+
+
+def test_generate_report_uses_price_tool_source_in_citations():
+    adapter = ConfiguredPriceRecordingToolAdapter()
+
+    response = generate_report(
+        "给我生成一份关于 Pilbara 锂矿的今日简报",
+        days=7,
+        llm_provider="mock",
+        tool_adapter=adapter,
+    )
+
+    price_citations = [
+        citation for citation in response.citations if citation.source_type == "price"
+    ]
+    assert price_citations
+    assert price_citations[0].url == "data/live/prices.json"
 
 
 def test_api_exposes_health_and_report_routes():
